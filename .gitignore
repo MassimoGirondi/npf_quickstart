@@ -1,0 +1,5 @@
+npf/results
+.nfs*
+__pycache__/**
+**.pyc
+testie**

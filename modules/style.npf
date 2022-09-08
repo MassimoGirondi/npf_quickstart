@@ -1,0 +1,35 @@
+%config
+time_precision=3
+nolegend:graph_legend=false
+outlegend:legend_loc=outer upper right
+outlegend:legend_bbox={0,1,1,0.1}
+outlegend:legend_ncol=2
+graph_force_diagonal_labels=true
+
+// Rename a variable (but only with a tag)
+// (is that the correct name??)
+italian:var_names={BW:Banda}
+
+// Shoiw it in Gbps (although npf has already some built-in rules)
+var_divider={BW:1000000000}
+var_unit={BW:Gbps}
+
+// You can also negate a tag
+-plot_unlimit:var_lim={BW:0-150}
+
+plot_lowbw:var_lim+={BW:0-10}
+
+// Accept 0 as a good result
+validation:accept_zero+={BW}
+
+// Change styile of the plot
+all_line_graphs:graph_type=line
+
+// ... THis is just as BW i example.
+// But if we would have something different in it, do not take only the last but treat all results as good values (like for different runs). So that you can show boxplots on a single run
+result_append={BW_ALL}
+
+
+// This is not upstream(yet)
+-noviolins:graph_type={BW:violinplot}
+

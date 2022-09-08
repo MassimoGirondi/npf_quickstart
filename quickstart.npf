@@ -1,0 +1,128 @@
+%info
+
+This is a sample test file
+
+
+%config
+
+// Here we declare the configuration of the test.
+// These are the same parameters you may pass on the command line
+
+// Timeout for yoyr scripts
+timeout=300
+
+// WIth tags also
+
+long_timeout:timeout=50000
+
+// Graph options
+
+// I like to have the graph style in another file (under modules)
+%import style.npf
+
+// You can import almost everything with this directive.
+// Here I import a script to compute time averages, but only if the tag is given
+%time_avg:import averages.npf
+
+
+
+%variables
+// These determine what you'll do
+// Mainly default values, change them at runtime with --variables
+
+PORT=5001
+
+// Allow to change a variable either  with a tag or with the variable name
+two_cores:NCORES?=2
+
+
+// Also with ranges (2 is the step in this case)
+odd_cores:NCORES?=[1-15#2]
+
+// Logaritmically
+log_cores:NCORES?=[1*31]
+
+// And with names (why not?)
+some_cores:NCORES={alpha:1,bravo:3,charlie:5}
+
+// And the default value, if not defined
+NCORES?=32
+
+
+// I like to call files from the script section so it's easier to debug
+// In this case we want sudo execution (e.g. if you use DPDK) and a custom timeout)
+// Autokill it when the client exits
+%script@server name=server sudo=true timeout=50 autokill=true
+
+// Inform NPF about something:
+echo "EVENT SERVER_START"
+bash server.sh
+
+// You can wait for an event (but be aware of buffering
+//%script@client name=server waitfor=SERVER_START
+// Or just delay the execution
+%script@client name=client delay=2
+bash client.sh
+python3 post_iperf.py
+echo "EVENT CLIENT_DONE"
+
+// We may also wait for the event (but be aware of buffering, be sure that you send enough text for it to be flushed, try to send some junk text in case)
+
+//%script@client name=post_iperf waitfor=CLIENT_DONE
+//python3 post_iperf.py
+
+
+%file server.sh
+taskset -a -c 0-${NCORES} iperf -s -p ${PORT} 
+
+%file client.sh
+# Run iperf with csv output.
+# Also note the # comment -> this will remain in the .sh script
+
+iperf -c ${server:0:ip} -p ${PORT} -t 10 -i 1 -y C | tee res.csv
+# Trick NPF that we have results, otherwise it may complain...
+echo "RESULT-DUMMY 1"
+
+%file post_iperf.py
+# Post process iperf output with python
+import csv
+print("Processing iperf csv")
+with open('res.csv') as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    start = 0
+    for row in csv_reader:
+        if start == 0:
+            start = int(row[0])
+        # NPF will look for lines like these to collect results:
+        print(f"{int(row[0]) - start}-RESULT-BYTES {row[7]}")
+        print(f"{int(row[0]) - start}-RESULT-BW {row[8]}")
+        print(f"{int(row[0]) - start}-RESULT-BW_ALL {row[8]}")
+
+
+%debug_save:pyexit debug
+# Run a python script as pyexit
+# We give it a name also (debug)
+
+# Let's say you want to import a py file in one of these pyexit sections:
+# Your Python interpet will need to know where to look.
+# This is probably an ugly way to do that, but it works...
+import sys
+import os
+from IPython import embed
+p = os.path.abspath(os.path.join(NPF_TESTIE_PATH, "modules"))
+if p not in sys.path:
+        sys.path.append(p)
+
+# And now we import
+import debug_save
+# And call our fancy method
+debug_save.debug_save(KIND_RESULTS, RESULTS)
+# embed(KIND_RESULTS,RESULTS)
+
+%init@server sudo=true
+# Killa any iperf (if any)
+killall iperf || true
+
+%exit@server sudo=true
+## Just to be sure
+killall iperf

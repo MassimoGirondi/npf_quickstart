@@ -1,0 +1,28 @@
+%info
+Compute averages and percentiles over the "time" results
+
+%pyexit 98-averages
+
+def cell_or_mean(c):
+        if type(c) is list:
+                return sum(c) / len(c)
+        else:
+                return c
+
+
+import pandas as pd
+try:
+        time_df = pd.DataFrame.from_dict(KIND_RESULTS["time"], orient="index")
+
+        # Sometimes more than 1 sample arrive at same time. Keep only the first in that case
+        #time_df = time_df.apply(lambda r : [c if type(c) is not list else c[0] for c in r], axis=1).dropna()
+
+        for k in time_df.keys():
+                col = time_df[k].dropna().apply(cell_or_mean)
+                RESULTS["AVG_"+k] = float(col.quantile(.50))
+                RESULTS["P95_"+k] = float(col.quantile(.95))
+                RESULTS["P99_"+k] = float(col.quantile(.99))
+except Exception as ex:
+        print("Error while post processing averages:", ex)
+        import IPython
+        IPython.embed()
