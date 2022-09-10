@@ -28,10 +28,10 @@ if ! [[ $@ =~ "show" ]]; then
         fi
 fi
 
-CLUSTER=${CLUSTER:---cluster "client=nslrack28-100G" "controller=nslrack29-100G" "worker=nslrack29-100G"}
+CLUSTER=${CLUSTER:---cluster "dut=nslrack19" "tg=nslrack18"}
 
 OUTPUT_OPTS="""--result-path npf/results/${TESTNAME}/ \
         --graph-filename npf/graphs/${TESTNAME}/ \
         ${TIME_GRAPH_OPTS}"""
-RUN_OPTS="--npf quickstart.npf --config n_runs=${NPF_RUNS}"
+RUN_OPTS="--npf simple_fastclick.npf --config n_runs=${NPF_RUNS}"
 NPF_OPTS="${RUN_OPTS} ${CLUSTER} ${OUTPUT_OPTS} ${SHOW_ALL}"

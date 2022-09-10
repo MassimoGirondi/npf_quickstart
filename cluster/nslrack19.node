@@ -1,0 +1,4 @@
+#Address or IP for connection
+addr=nslrack19.nslab
+0:pci=11:00.0
+1:pci=11:00.1

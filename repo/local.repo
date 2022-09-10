@@ -1,0 +1,5 @@
+name=FastClick
+parent=fastclick
+configure+=--enable-flow --enable-flow-api
+url=/home/csd22hhd/fastclick/
+

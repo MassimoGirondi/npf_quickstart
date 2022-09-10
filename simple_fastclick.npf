@@ -1,0 +1,55 @@
+%info
+Just a simple experiment that forward packets
+
+%config
+
+%variables
+FWD_CORES?=2
+
+
+%late_variables
+// Not the cleaniest way, but it works
+CLICK_PATH?=/home/csd22hhd/fastclick/bin/
+
+
+%script@dut name=forwarder sudo=true
+
+${CLICK_PATH}/click --dpdk -l1-${FWD_CORES} -a ${self:0:pci} -m1G -- forwarder.click
+
+%script@tg name=generator sudo=true timeout=10 delay=1 autokill=true // waitfor=DUT_READY
+
+${CLICK_PATH}/click --dpdk -l1 -a ${self:0:pci} -m1G -- generator.click
+
+%file forwarder.click
+
+FromDPDKDevice(0, SCALE parallel) -> ToDPDKDevice(0)
+
+%file generator.click
+
+source::FastUDPSource(1000,10000000,100,aa:bb:cc:dd:ee:ff,10.10.10.10,8888,ff:ff:ff:ff:ff:ff,20.20.20.20,9999)
+
+//DriverManager(print "EVENT DUT_READY")
+
+source -> Unqueue -> tx::AverageCounter ->ToDPDKDevice(0)
+
+FromDPDKDevice(0) -> rx::AverageCounter -> Discard
+
+
+DriverManager(
+	wait,
+	print "RESULT-TX $(tx.count)",
+	print "RESULT-RX $(rx.count)",
+	exit)
+
+Script(
+	wait 1s,
+	print "$(now)-RESULT-TX-COUNT $(tx.count)",
+	print "$(now)-RESULT-RX-COUNT $(rx.count)",
+	print "$(now)-RESULT-RX-TH $(mul $(rx.byte_rate) 8)",
+	print "$(now)-RESULT-DROP $(sub $(tx.count) $(rx.count))",
+	loop)
+
+
+
+
+
