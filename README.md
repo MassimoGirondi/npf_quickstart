@@ -8,6 +8,10 @@ So that you have one helper for any experiment, but only one .npf script for all
 In the script I reference to a npf repository in the home folder, but you can replace that with the simple `npf-compare` installed with pip3.
 
 
+# Fastclick
+
+The `simple_fastclick.npf` test is a toy example on FastClick and how you can manipulate it from NPF. Start from `run_npf_forwarder.sh` as a base script to run it. The NPF repository contains more advanced modules for traffic generation and benchmarking.
+
 
 # Further documentation
 
